@@ -1,14 +1,12 @@
 <?php
 /**
- * Class for manipulating EXIF and IPTC image
- *
- * PHP version 5
+ * Class to manipulate EXIF and image IPTC
  *
  * @category Image
  * @package  Iptc
- * @author   Bruno Thiago Leite Agutoli <brunotla1@gmail.com>
- * @license  http://www.gnu.org/copyleft/gpl.html GNU General Public License
- * @link     https://github.com/agutoli
+ * @author   Bruno Thiago Leite Agutoli <bruno.agutoli@gmail.com>
+ * @license  https://github.com/agutoli/Image_Iptc/blob/master/MIT-LICENSE.txt
+ * @link     https://github.com/agutoli/Image_Iptc/
  */
 
 /**
@@ -17,14 +15,13 @@
 require 'Iptc/Exception.php';
 
 /**
- * Class for manipulating EXIF and IPTC image
+ * Class to manipulate EXIF and image IPTC
  *
  * @category Image
  * @package  Iptc
- * @author   Bruno Thiago Leite Agutoli <brunotla1@gmail.com>
- * @license  http://www.gnu.org/copyleft/gpl.html GNU General Public License
- * @version  Release: 0.0.1
- * @link     https://github.com/agutoli
+ * @author   Bruno Thiago Leite Agutoli <bruno.agutoli@gmail.com>
+ * @license  https://github.com/agutoli/Image_Iptc/blob/master/MIT-LICENSE.txt
+ * @link     https://github.com/agutoli/Image_Iptc/
  */
 
 class Iptc
@@ -132,9 +129,10 @@ class Iptc
                 "File \"{$filename}\" is not writable!"
             );
         }
+
+        $parts = explode('.', strtolower($filename));
         
-        if ( ! in_array(end(explode('.', strtolower($filename))), $this->_allowedExt) ) {
-            include 'Iptc/Exception.php';
+        if ( ! in_array(end($parts), $this->_allowedExt) ) {
             throw new Iptc_Exception(
                 'Support only for the following extensions: ' . 
                     implode(',', $this->_allowedExt)
@@ -146,6 +144,7 @@ class Iptc
         if ($this->_hasMeta) {
             $this->_meta = iptcparse($imageinfo["APP13"]);
         }
+
         $this->_filename = $filename;
     }
 
@@ -160,7 +159,7 @@ class Iptc
      */
     public function set($tag, $data) 
     {
-        $this->_meta["2#$tag"] = array($data);
+        $this->_meta["2#{$tag}"] = array($data);
         $this->_hasMeta        = true;
         return $this;
     }
@@ -176,11 +175,11 @@ class Iptc
      */
     public function prepend($tag, $data)
     {
-        if ( ! empty($this->_meta["2#$tag"])) {
-            array_unshift($this->_meta["2#$tag"], $data);
-            $data = $this->_meta["2#$tag"];
+        if ( ! empty($this->_meta["2#{$tag}"])) {
+            array_unshift($this->_meta["2#{$tag}"], $data);
+            $data = $this->_meta["2#{$tag}"];
         }
-        $this->_meta["2#$tag"] = array( $data );
+        $this->_meta["2#{$tag}"] = array( $data );
         $this->_hasMeta        = true;
         return $this;
     }
@@ -196,11 +195,11 @@ class Iptc
      */
     public function append($tag, $data)
     {
-        if ( ! empty($this->_meta["2#$tag"])) {
-            array_push($this->_meta["2#$tag"], $data);
-            $data = $this->_meta["2#$tag"];
+        if ( ! empty($this->_meta["2#{$tag}"])) {
+            array_push($this->_meta["2#{$tag}"], $data);
+            $data = $this->_meta["2#{$tag}"];
         }
-        $this->_meta["2#$tag"] = array( $data );
+        $this->_meta["2#{$tag}"] = array( $data );
         $this->_hasMeta        = true;
         return $this;
     }
@@ -217,8 +216,8 @@ class Iptc
      */
     public function fetch($tag) 
     {
-        if (isset($this->_meta["2#$tag"])) {
-            return $this->_meta["2#$tag"][0];
+        if (isset($this->_meta["2#{$tag}"])) {
+            return $this->_meta["2#{$tag}"][0];
         }
         return false;
     }
@@ -235,8 +234,8 @@ class Iptc
      */
     public function fetchAll($tag) 
     {
-        if (isset($this->_meta["2#$tag"])) {
-            return $this->_meta["2#$tag"];
+        if (isset($this->_meta["2#{$tag}"])) {
+            return $this->_meta["2#{$tag}"];
         }
         return false;
     }
@@ -263,8 +262,10 @@ class Iptc
         $iptc = '';
         foreach (array_keys($this->_meta) as $key) {
             $tag   = str_replace("2#", "", $key);
-            $iptc .= $this->iptcMakeTag(2, $tag, $this->_meta[$key][0]);
-        }        
+            foreach($this->_meta[$key] as $value) {
+                $iptc .= $this->iptcMakeTag(2, $tag, $value);
+            }
+        }
         return $iptc;    
     }
 
